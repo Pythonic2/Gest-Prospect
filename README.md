@@ -80,6 +80,24 @@ DJANGO_SECURE_SSL_REDIRECT=true
 DATABASE_PATH=/app/data/db.sqlite3
 ```
 
+Para usar PostgreSQL no Neon, configure também:
+
+```dotenv
+DB_NAME=neondb
+DB_USER=neondb_owner
+DB_PASSWORD=sua-senha
+DB_HOST=seu-endpoint.sa-east-1.aws.neon.tech
+DB_PORT=5432
+DB_SCHEMA=
+DB_SSLMODE=require
+DB_CHANNEL_BINDING=require
+DB_CONNECT_TIMEOUT=10
+DB_CONN_MAX_AGE=60
+```
+
+Quando `DB_HOST` estiver vazio, o projeto usa SQLite. Quando estiver preenchido,
+o Django seleciona PostgreSQL automaticamente.
+
 Para recriar os arquivos Docker ou escolher outra porta:
 
 ```bash

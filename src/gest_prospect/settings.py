@@ -50,12 +50,35 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "gest_prospect.wsgi.application"
 ASGI_APPLICATION = "gest_prospect.asgi.application"
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": Path(os.getenv("DATABASE_PATH", BASE_DIR / "db.sqlite3")),
+if os.getenv("DB_HOST"):
+    database_options = {
+        "sslmode": os.getenv("DB_SSLMODE") or "require",
+        "channel_binding": os.getenv("DB_CHANNEL_BINDING") or "require",
+        "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT") or "10"),
     }
-}
+    if schema := os.getenv("DB_SCHEMA"):
+        database_options["options"] = f"-c search_path={schema}"
+
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME", "neondb"),
+            "USER": os.getenv("DB_USER", "neondb_owner"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.environ["DB_HOST"],
+            "PORT": os.getenv("DB_PORT") or "5432",
+            "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE") or "60"),
+            "CONN_HEALTH_CHECKS": True,
+            "OPTIONS": database_options,
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": Path(os.getenv("DATABASE_PATH", BASE_DIR / "db.sqlite3")),
+        }
+    }
 AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = "pt-br"
 TIME_ZONE = "America/Fortaleza"

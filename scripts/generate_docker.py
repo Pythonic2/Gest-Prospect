@@ -56,6 +56,16 @@ services:
       GUNICORN_WORKERS: "${GUNICORN_WORKERS:-2}"
       GUNICORN_TIMEOUT: "${GUNICORN_TIMEOUT:-60}"
       DATABASE_PATH: /app/data/db.sqlite3
+      DB_NAME: "${DB_NAME:-neondb}"
+      DB_USER: "${DB_USER:-neondb_owner}"
+      DB_PASSWORD: "${DB_PASSWORD:-}"
+      DB_HOST: "${DB_HOST:-}"
+      DB_PORT: "${DB_PORT:-5432}"
+      DB_SCHEMA: "${DB_SCHEMA:-}"
+      DB_SSLMODE: "${DB_SSLMODE:-require}"
+      DB_CHANNEL_BINDING: "${DB_CHANNEL_BINDING:-require}"
+      DB_CONNECT_TIMEOUT: "${DB_CONNECT_TIMEOUT:-10}"
+      DB_CONN_MAX_AGE: "${DB_CONN_MAX_AGE:-60}"
     ports:
       - "${APP_PORT:-__PORT__}:${APP_PORT:-__PORT__}"
     volumes:
