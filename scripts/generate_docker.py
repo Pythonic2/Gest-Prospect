@@ -38,6 +38,7 @@ COMPOSE = """name: __PROJECT__
 
 services:
   app:
+    image: "${APP_IMAGE_NAME:-gest-prospect-neon}:${APP_IMAGE_TAG:-1.0.0}"
     build:
       context: .
       dockerfile: Dockerfile
@@ -65,6 +66,8 @@ services:
       DB_CONN_MAX_AGE: "${DB_CONN_MAX_AGE:-60}"
     ports:
       - "${APP_PORT:-__PORT__}:${APP_PORT:-__PORT__}"
+    networks:
+      - pi_default
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.getenv('APP_PORT', '__PORT__') + '/', timeout=3)"]
@@ -72,6 +75,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+
+networks:
+  pi_default:
+    external: true
+    name: pi_default
 """
 
 DOCKERIGNORE = """.git
