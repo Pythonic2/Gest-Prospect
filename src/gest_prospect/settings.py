@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -50,7 +51,18 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "gest_prospect.wsgi.application"
 ASGI_APPLICATION = "gest_prospect.asgi.application"
-if os.getenv("DB_HOST"):
+DB_ENGINE = os.getenv("DB_ENGINE", "postgresql" if os.getenv("DB_HOST") else "sqlite").lower()
+
+if DB_ENGINE in {"postgresql", "postgres", "neon"}:
+    missing_database_variables = [
+        name for name in ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST") if not os.getenv(name)
+    ]
+    if missing_database_variables:
+        raise ImproperlyConfigured(
+            "Variáveis obrigatórias do PostgreSQL ausentes: "
+            + ", ".join(missing_database_variables)
+        )
+
     database_options = {
         "sslmode": os.getenv("DB_SSLMODE") or "require",
         "channel_binding": os.getenv("DB_CHANNEL_BINDING") or "require",
@@ -62,9 +74,9 @@ if os.getenv("DB_HOST"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME", "neondb"),
-            "USER": os.getenv("DB_USER", "neondb_owner"),
-            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "NAME": os.environ["DB_NAME"],
+            "USER": os.environ["DB_USER"],
+            "PASSWORD": os.environ["DB_PASSWORD"],
             "HOST": os.environ["DB_HOST"],
             "PORT": os.getenv("DB_PORT") or "5432",
             "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE") or "60"),
@@ -72,13 +84,15 @@ if os.getenv("DB_HOST"):
             "OPTIONS": database_options,
         }
     }
-else:
+elif DB_ENGINE == "sqlite":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": Path(os.getenv("DATABASE_PATH", BASE_DIR / "db.sqlite3")),
         }
     }
+else:
+    raise ImproperlyConfigured(f"DB_ENGINE inválido: {DB_ENGINE}")
 AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = "pt-br"
 TIME_ZONE = "America/Fortaleza"

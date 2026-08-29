@@ -84,6 +84,7 @@ Para usar PostgreSQL no Neon, configure também:
 
 ```dotenv
 DB_NAME=neondb
+DB_ENGINE=postgresql
 DB_USER=neondb_owner
 DB_PASSWORD=sua-senha
 DB_HOST=seu-endpoint.sa-east-1.aws.neon.tech
