@@ -8,6 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+ARG BUILD_VERSION=dev
+LABEL com.gestcloud.build-version=$BUILD_VERSION
+
 COPY --from=ghcr.io/astral-sh/uv:0.12.5 /uv /uvx /bin/
 COPY pyproject.toml uv.lock README.md ./
 COPY src ./src

@@ -64,6 +64,9 @@ No Portainer, carregue as variáveis na seção **Environment variables**. Não 
 necessário enviar ou montar um arquivo `.env`: o Compose repassa explicitamente
 essas variáveis ao container.
 
+Para invalidar o cache de build no Portainer, altere `BUILD_VERSION` antes do
+redeploy. Pode ser um número crescente, uma data ou o hash do commit.
+
 A aplicação ficará disponível em `http://localhost:8003/`. O banco utilizado é
 sempre o PostgreSQL do Neon, e as migrations são aplicadas na inicialização.
 
