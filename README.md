@@ -49,3 +49,37 @@ WhatsApp. Ao abrir o WhatsApp, o prospect é marcado como contatado e a data fic
 registrada para evitar contatos repetidos.
 
 O painel administrativo continua disponível em `http://127.0.0.1:8000/admin/`.
+
+## Docker
+
+Os arquivos usam a porta `8003` por padrão. Prepare o ambiente e suba o serviço:
+
+```bash
+cp .env.example .env
+# Preencha GOOGLE_MAPS_API_KEY e DJANGO_SECRET_KEY
+docker compose up --build -d
+```
+
+A aplicação ficará disponível em `http://localhost:8003/`. O SQLite é persistido
+no volume nomeado `django_data`, e as migrations são aplicadas na inicialização.
+
+Em produção, configure pelo menos:
+
+```dotenv
+DJANGO_DEBUG=false
+DJANGO_SECRET_KEY=uma-chave-longa-aleatoria
+APP_PORT=8003
+APP_URL=https://prospects.seudominio.com.br
+DJANGO_ALLOWED_HOSTS=prospects.seudominio.com.br
+DJANGO_CSRF_TRUSTED_ORIGINS=https://prospects.seudominio.com.br
+DJANGO_SECURE_SSL_REDIRECT=true
+DATABASE_PATH=/app/data/db.sqlite3
+```
+
+Para recriar os arquivos Docker ou escolher outra porta:
+
+```bash
+uv run python scripts/generate_docker.py --port 8003
+```
+
+O gerador aceita também `--project`, `--module` e `--output`.

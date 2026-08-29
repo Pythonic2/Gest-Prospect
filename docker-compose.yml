@@ -1,0 +1,31 @@
+name: gest-prospect
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gest-prospect-app
+    env_file:
+      - .env
+    environment:
+      APP_PORT: "${APP_PORT:-8003}"
+      APP_URL: "${APP_URL:-http://localhost:8003}"
+      DJANGO_DEBUG: "${DJANGO_DEBUG:-false}"
+      DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}"
+      DJANGO_CSRF_TRUSTED_ORIGINS: "${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:8003}"
+      DATABASE_PATH: /app/data/db.sqlite3
+    ports:
+      - "${APP_PORT:-8003}:${APP_PORT:-8003}"
+    volumes:
+      - django_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.getenv('APP_PORT', '8003') + '/', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  django_data:
