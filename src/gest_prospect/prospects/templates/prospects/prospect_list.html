@@ -24,6 +24,13 @@
         .primary { color: white; background: var(--blue); border-color: var(--blue); }
         .whatsapp { color: white; background: #128c4a; border-color: #128c4a; white-space: nowrap; }
         .filters { display: grid; grid-template-columns: 1fr 210px auto; gap: 10px; margin-bottom: 16px; }
+        .template-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+        .template { border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+        .template header { display: flex; justify-content: space-between; gap: 12px; }
+        .template pre { margin: 10px 0 0; color: var(--muted); white-space: pre-wrap; font: inherit; }
+        .site-link { display: block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .contact-form { display: grid; gap: 6px; min-width: 220px; }
+        .contact-form select { min-height: 36px; padding: 6px; }
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
@@ -72,6 +79,22 @@
     </section>
 
     <section class="card">
+        <h2>Modelos de mensagem</h2>
+        <p class="subtitle">Escolha um modelo antes de abrir o WhatsApp. Use <code>{nome_empresa}</code> para personalizar o texto.</p>
+        <div class="template-grid">
+            {% for template in message_templates %}
+                <article class="template">
+                    <header><strong>{{ template.name }}</strong>{% if template.is_default %}<span>Padrão</span>{% endif %}</header>
+                    <pre>{{ template.body }}</pre>
+                </article>
+            {% empty %}
+                <p>Nenhum modelo ativo. Será utilizada a mensagem padrão do sistema.</p>
+            {% endfor %}
+        </div>
+        <p><a href="{% url 'admin:prospects_messagetemplate_changelist' %}">Criar e editar modelos no admin</a></p>
+    </section>
+
+    <section class="card">
         <h2>Prospects cadastrados</h2>
         <form method="get" class="filters">
             <input type="search" name="q" value="{{ search }}" placeholder="Nome, telefone ou endereço">
@@ -94,7 +117,7 @@
                         <td>{{ prospect.phone|default:"Sem telefone" }}</td>
                         <td>
                             {% if prospect.website_url %}
-                                <a href="{{ prospect.website_url }}" target="_blank" rel="noopener noreferrer">Acessar site</a>
+                                <a class="site-link" href="{{ prospect.website_url }}" target="_blank" rel="noopener noreferrer" title="{{ prospect.website_url }}">{{ prospect.website_url }}</a>
                             {% else %}—{% endif %}
                         </td>
                         <td>{{ prospect.rating|default:"—" }} <small>{{ prospect.user_rating_count }} avaliações</small></td>
@@ -111,9 +134,17 @@
                             {% if prospect.contacted_at %}<div class="sent">Mensagem aberta em {{ prospect.contacted_at|date:"d/m/Y H:i" }}</div>{% endif %}
                         </td>
                         <td>
-                            {% if prospect.whatsapp_url %}
-                                <form method="post" action="{% url 'prospects:open_whatsapp' prospect.pk %}" target="_blank" onsubmit="markContacted(this)">
-                                    {% csrf_token %}<button type="submit" class="whatsapp">Enviar WhatsApp</button>
+                            {% if prospect.whatsapp_number %}
+                                <form method="post" action="{% url 'prospects:open_whatsapp' prospect.pk %}" target="_blank" onsubmit="markContacted(this)" class="contact-form">
+                                    {% csrf_token %}
+                                    {% if message_templates %}
+                                        <select name="message_template" aria-label="Mensagem para {{ prospect.name }}">
+                                            {% for template in message_templates %}
+                                                <option value="{{ template.pk }}"{% if template.is_default %} selected{% endif %}>{{ template.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% endif %}
+                                    <button type="submit" class="whatsapp">Enviar WhatsApp</button>
                                 </form>
                             {% else %}—{% endif %}
                         </td>

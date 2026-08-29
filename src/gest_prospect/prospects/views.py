@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import ImportProspectsForm, ProspectStatusForm
-from .models import Prospect
+from .models import MessageTemplate, Prospect
 
 
 def prospect_list(request):
@@ -26,6 +26,7 @@ def prospect_list(request):
 
     context = {
         "prospects": prospects,
+        "message_templates": MessageTemplate.objects.filter(is_active=True),
         "import_form": ImportProspectsForm(),
         "status_choices": Prospect.Status.choices,
         "selected_status": status,
@@ -77,7 +78,13 @@ def update_status(request, pk):
 @require_POST
 def open_whatsapp(request, pk):
     prospect = get_object_or_404(Prospect, pk=pk)
-    if not prospect.whatsapp_url:
+    template_id = request.POST.get("message_template")
+    if template_id:
+        message_template = get_object_or_404(MessageTemplate, pk=template_id, is_active=True)
+    else:
+        message_template = MessageTemplate.objects.filter(is_active=True, is_default=True).first()
+    whatsapp_url = prospect.get_whatsapp_url(message_template)
+    if not whatsapp_url:
         messages.error(request, f"{prospect.name} não possui telefone cadastrado.")
         return redirect("prospects:list")
 
@@ -86,4 +93,4 @@ def open_whatsapp(request, pk):
     if prospect.contacted_at is None:
         prospect.contacted_at = timezone.now()
     prospect.save(update_fields=("status", "contacted_at", "updated_at"))
-    return redirect(prospect.whatsapp_url)
+    return redirect(whatsapp_url)

@@ -1,14 +1,49 @@
 import re
+from string import Formatter
 from urllib.parse import quote
 
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
-WHATSAPP_MESSAGE = """Olá, {nome_empresa}, tudo bem? Meu nome é Igor, sou da GEST TECH MARINHO aqui de João Pessoa. Trabalhamos com automação de processos para empresas e estou entrando em contato com alguns escritórios contábeis da região.
+DEFAULT_WHATSAPP_MESSAGE = """Olá, {nome_empresa},
+tudo bem? Sou Igor, da GEST TECH MARINHO, aqui de João Pessoa. Trabalho ajudando empresas a reduzir tarefas manuais e melhorar processos através de automações, integrações e sistemas sob medida.
+Estou conversando com alguns escritórios contábeis da região e queria te fazer uma pergunta rápida: hoje vocês têm alguma rotina repetitiva que toma bastante tempo da equipe?"""
 
-Queria fazer uma pergunta rápida: vocês têm alguma rotina que a equipe ainda faz manualmente todos os dias, como baixar documentos em portais, atualizar planilhas, conferir informações, gerar relatórios ou passar dados de um sistema para outro?
 
-Dependendo do processo, conseguimos automatizar boa parte desse trabalho. Se fizer sentido, posso avaliar um processo de vocês sem compromisso."""
+class MessageTemplate(models.Model):
+    name = models.CharField("nome", max_length=120)
+    body = models.TextField("mensagem", help_text="Use {nome_empresa} para inserir o nome do prospect.")
+    is_active = models.BooleanField("ativo", default=True)
+    is_default = models.BooleanField("padrão", default=False)
+    created_at = models.DateTimeField("criado em", auto_now_add=True)
+    updated_at = models.DateTimeField("atualizado em", auto_now=True)
+
+    class Meta:
+        ordering = ["-is_default", "name"]
+        verbose_name = "modelo de mensagem"
+        verbose_name_plural = "modelos de mensagem"
+
+    def __str__(self) -> str:
+        return self.name
+
+    def clean(self) -> None:
+        super().clean()
+        try:
+            fields = {field_name for _, field_name, _, _ in Formatter().parse(self.body) if field_name}
+        except ValueError as error:
+            raise ValidationError({"body": "As chaves da mensagem estão incompletas."}) from error
+        unsupported_fields = fields - {"nome_empresa"}
+        if unsupported_fields:
+            raise ValidationError({"body": "Use somente a variável {nome_empresa}."})
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            type(self).objects.exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def render_for(self, company_name: str) -> str:
+        return self.body.format(nome_empresa=company_name)
 
 
 class Prospect(models.Model):
@@ -49,7 +84,14 @@ class Prospect(models.Model):
 
     @property
     def whatsapp_url(self) -> str:
+        return self.get_whatsapp_url()
+
+    def get_whatsapp_url(self, message_template: MessageTemplate | None = None) -> str:
         if not self.whatsapp_number:
             return ""
-        message = WHATSAPP_MESSAGE.format(nome_empresa=self.name)
+        message = (
+            message_template.render_for(self.name)
+            if message_template
+            else DEFAULT_WHATSAPP_MESSAGE.format(nome_empresa=self.name)
+        )
         return f"https://wa.me/{self.whatsapp_number}?text={quote(message)}"
