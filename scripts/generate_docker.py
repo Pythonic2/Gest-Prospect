@@ -44,14 +44,17 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: __PROJECT__-app
-    env_file:
-      - .env
     environment:
+      GOOGLE_MAPS_API_KEY: "${GOOGLE_MAPS_API_KEY:-}"
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:-dev-only-change-me}"
       APP_PORT: "${APP_PORT:-__PORT__}"
       APP_URL: "${APP_URL:-http://localhost:__PORT__}"
       DJANGO_DEBUG: "${DJANGO_DEBUG:-false}"
       DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}"
       DJANGO_CSRF_TRUSTED_ORIGINS: "${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:__PORT__}"
+      DJANGO_SECURE_SSL_REDIRECT: "${DJANGO_SECURE_SSL_REDIRECT:-false}"
+      GUNICORN_WORKERS: "${GUNICORN_WORKERS:-2}"
+      GUNICORN_TIMEOUT: "${GUNICORN_TIMEOUT:-60}"
       DATABASE_PATH: /app/data/db.sqlite3
     ports:
       - "${APP_PORT:-__PORT__}:${APP_PORT:-__PORT__}"

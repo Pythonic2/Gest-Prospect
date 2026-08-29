@@ -60,6 +60,10 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
+No Portainer, carregue as variáveis na seção **Environment variables**. Não é
+necessário enviar ou montar um arquivo `.env`: o Compose repassa explicitamente
+essas variáveis ao container.
+
 A aplicação ficará disponível em `http://localhost:8003/`. O SQLite é persistido
 no volume nomeado `django_data`, e as migrations são aplicadas na inicialização.
 
