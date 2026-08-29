@@ -51,48 +51,36 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "gest_prospect.wsgi.application"
 ASGI_APPLICATION = "gest_prospect.asgi.application"
-DB_ENGINE = os.getenv("DB_ENGINE", "postgresql" if os.getenv("DB_HOST") else "sqlite").lower()
+missing_database_variables = [
+    name for name in ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST") if not os.getenv(name)
+]
+if missing_database_variables:
+    raise ImproperlyConfigured(
+        "Variáveis obrigatórias do Neon/PostgreSQL ausentes: "
+        + ", ".join(missing_database_variables)
+    )
 
-if DB_ENGINE in {"postgresql", "postgres", "neon"}:
-    missing_database_variables = [
-        name for name in ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST") if not os.getenv(name)
-    ]
-    if missing_database_variables:
-        raise ImproperlyConfigured(
-            "Variáveis obrigatórias do PostgreSQL ausentes: "
-            + ", ".join(missing_database_variables)
-        )
+database_options = {
+    "sslmode": os.getenv("DB_SSLMODE") or "require",
+    "channel_binding": os.getenv("DB_CHANNEL_BINDING") or "require",
+    "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT") or "10"),
+}
+if schema := os.getenv("DB_SCHEMA"):
+    database_options["options"] = f"-c search_path={schema}"
 
-    database_options = {
-        "sslmode": os.getenv("DB_SSLMODE") or "require",
-        "channel_binding": os.getenv("DB_CHANNEL_BINDING") or "require",
-        "connect_timeout": int(os.getenv("DB_CONNECT_TIMEOUT") or "10"),
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ["DB_NAME"],
+        "USER": os.environ["DB_USER"],
+        "PASSWORD": os.environ["DB_PASSWORD"],
+        "HOST": os.environ["DB_HOST"],
+        "PORT": os.getenv("DB_PORT") or "5432",
+        "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE") or "60"),
+        "CONN_HEALTH_CHECKS": True,
+        "OPTIONS": database_options,
     }
-    if schema := os.getenv("DB_SCHEMA"):
-        database_options["options"] = f"-c search_path={schema}"
-
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ["DB_NAME"],
-            "USER": os.environ["DB_USER"],
-            "PASSWORD": os.environ["DB_PASSWORD"],
-            "HOST": os.environ["DB_HOST"],
-            "PORT": os.getenv("DB_PORT") or "5432",
-            "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE") or "60"),
-            "CONN_HEALTH_CHECKS": True,
-            "OPTIONS": database_options,
-        }
-    }
-elif DB_ENGINE == "sqlite":
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": Path(os.getenv("DATABASE_PATH", BASE_DIR / "db.sqlite3")),
-        }
-    }
-else:
-    raise ImproperlyConfigured(f"DB_ENGINE inválido: {DB_ENGINE}")
+}
 AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = "pt-br"
 TIME_ZONE = "America/Fortaleza"

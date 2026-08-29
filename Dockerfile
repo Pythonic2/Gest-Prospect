@@ -14,15 +14,13 @@ COPY src ./src
 COPY manage.py ./
 
 RUN uv sync --frozen --no-dev \
-    && uv run python manage.py collectstatic --noinput \
-    && mkdir -p /app/data \
+    && DB_NAME=build DB_USER=build DB_PASSWORD=build DB_HOST=localhost uv run python manage.py collectstatic --noinput \
     && useradd --create-home --uid 10001 django \
     && chown -R django:django /app
 
 USER django
 
-ENV APP_PORT=8003 \
-    DATABASE_PATH=/app/data/db.sqlite3
+ENV APP_PORT=8003
 
 EXPOSE 8003
 

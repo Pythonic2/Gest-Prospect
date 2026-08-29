@@ -21,15 +21,13 @@ COPY src ./src
 COPY manage.py ./
 
 RUN uv sync --frozen --no-dev \\
-    && uv run python manage.py collectstatic --noinput \\
-    && mkdir -p /app/data \\
+    && DB_NAME=build DB_USER=build DB_PASSWORD=build DB_HOST=localhost uv run python manage.py collectstatic --noinput \\
     && useradd --create-home --uid 10001 django \\
     && chown -R django:django /app
 
 USER django
 
-ENV APP_PORT=__PORT__ \\
-    DATABASE_PATH=/app/data/db.sqlite3
+ENV APP_PORT=__PORT__
 
 EXPOSE __PORT__
 
@@ -55,8 +53,6 @@ services:
       DJANGO_SECURE_SSL_REDIRECT: "${DJANGO_SECURE_SSL_REDIRECT:-false}"
       GUNICORN_WORKERS: "${GUNICORN_WORKERS:-2}"
       GUNICORN_TIMEOUT: "${GUNICORN_TIMEOUT:-60}"
-      DATABASE_PATH: /app/data/db.sqlite3
-      DB_ENGINE: "${DB_ENGINE:-postgresql}"
       DB_NAME: "${DB_NAME:-neondb}"
       DB_USER: "${DB_USER:-neondb_owner}"
       DB_PASSWORD: "${DB_PASSWORD:-}"
@@ -69,8 +65,6 @@ services:
       DB_CONN_MAX_AGE: "${DB_CONN_MAX_AGE:-60}"
     ports:
       - "${APP_PORT:-__PORT__}:${APP_PORT:-__PORT__}"
-    volumes:
-      - django_data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.getenv('APP_PORT', '__PORT__') + '/', timeout=3)"]
@@ -78,9 +72,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-
-volumes:
-  django_data:
 """
 
 DOCKERIGNORE = """.git
@@ -89,7 +80,6 @@ DOCKERIGNORE = """.git
 __pycache__
 *.py[cod]
 .env
-db.sqlite3
 staticfiles
 .pytest_cache
 .ruff_cache

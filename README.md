@@ -64,8 +64,8 @@ No Portainer, carregue as variáveis na seção **Environment variables**. Não 
 necessário enviar ou montar um arquivo `.env`: o Compose repassa explicitamente
 essas variáveis ao container.
 
-A aplicação ficará disponível em `http://localhost:8003/`. O SQLite é persistido
-no volume nomeado `django_data`, e as migrations são aplicadas na inicialização.
+A aplicação ficará disponível em `http://localhost:8003/`. O banco utilizado é
+sempre o PostgreSQL do Neon, e as migrations são aplicadas na inicialização.
 
 Em produção, configure pelo menos:
 
@@ -77,14 +77,12 @@ APP_URL=https://prospects.seudominio.com.br
 DJANGO_ALLOWED_HOSTS=prospects.seudominio.com.br
 DJANGO_CSRF_TRUSTED_ORIGINS=https://prospects.seudominio.com.br
 DJANGO_SECURE_SSL_REDIRECT=true
-DATABASE_PATH=/app/data/db.sqlite3
 ```
 
 Para usar PostgreSQL no Neon, configure também:
 
 ```dotenv
 DB_NAME=neondb
-DB_ENGINE=postgresql
 DB_USER=neondb_owner
 DB_PASSWORD=sua-senha
 DB_HOST=seu-endpoint.sa-east-1.aws.neon.tech
@@ -96,8 +94,7 @@ DB_CONNECT_TIMEOUT=10
 DB_CONN_MAX_AGE=60
 ```
 
-Quando `DB_HOST` estiver vazio, o projeto usa SQLite. Quando estiver preenchido,
-o Django seleciona PostgreSQL automaticamente.
+As variáveis `DB_NAME`, `DB_USER`, `DB_PASSWORD` e `DB_HOST` são obrigatórias.
 
 Para recriar os arquivos Docker ou escolher outra porta:
 
