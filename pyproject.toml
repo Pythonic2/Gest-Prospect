@@ -1,0 +1,20 @@
+[project]
+name = "gest-prospect"
+version = "0.1.0"
+description = "Consulta de potenciais clientes usando a Google Places API"
+authors = [
+    { name = "Pythonic2", email = "igoormarinhosilva@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.1",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+gest-prospect = "gest_prospect:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
