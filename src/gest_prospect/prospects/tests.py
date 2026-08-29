@@ -66,6 +66,7 @@ class ProspectViewsTests(TestCase):
             place_id="place-view",
             name="Empresa da Interface",
             phone="(83) 99999-1234",
+            website_url="https://empresa.example.com",
         )
 
     def test_list_displays_prospect(self):
@@ -74,6 +75,7 @@ class ProspectViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Empresa da Interface")
         self.assertContains(response, "Enviar WhatsApp")
+        self.assertContains(response, "https://empresa.example.com")
 
     def test_open_whatsapp_marks_prospect_as_contacted(self):
         response = self.client.post(reverse("prospects:open_whatsapp", args=[self.prospect.pk]))

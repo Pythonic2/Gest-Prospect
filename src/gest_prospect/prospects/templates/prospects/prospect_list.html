@@ -86,12 +86,17 @@
 
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Empresa</th><th>Telefone</th><th>Avaliação</th><th>Status</th><th>Contato</th></tr></thead>
+                <thead><tr><th>Empresa</th><th>Telefone</th><th>Site</th><th>Avaliação</th><th>Status</th><th>Contato</th></tr></thead>
                 <tbody>
                 {% for prospect in prospects %}
                     <tr>
                         <td><strong>{{ prospect.name }}</strong><small>{{ prospect.address|default:"Sem endereço" }}</small></td>
                         <td>{{ prospect.phone|default:"Sem telefone" }}</td>
+                        <td>
+                            {% if prospect.website_url %}
+                                <a href="{{ prospect.website_url }}" target="_blank" rel="noopener noreferrer">Acessar site</a>
+                            {% else %}—{% endif %}
+                        </td>
                         <td>{{ prospect.rating|default:"—" }} <small>{{ prospect.user_rating_count }} avaliações</small></td>
                         <td>
                             <form method="post" action="{% url 'prospects:update_status' prospect.pk %}" class="status-form">
@@ -114,7 +119,7 @@
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="5" class="empty">Nenhum prospect encontrado.</td></tr>
+                    <tr><td colspan="6" class="empty">Nenhum prospect encontrado.</td></tr>
                 {% endfor %}
                 </tbody>
             </table>
