@@ -38,7 +38,6 @@ COMPOSE = """name: __PROJECT__
 
 services:
   app:
-    image: "${APP_IMAGE_NAME:-gest-prospect-neon}:${APP_IMAGE_TAG:-1.0.0}"
     build:
       context: .
       dockerfile: Dockerfile
