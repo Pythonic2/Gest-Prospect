@@ -9,13 +9,19 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import ImportProspectsForm, ProspectStatusForm
-from .models import MessageTemplate, Prospect
+from .models import MessageTemplate, Prospect, Segment
 
 
 def prospect_list(request):
     prospects = Prospect.objects.all()
     search = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
+    segment_id = request.GET.get("segment", "").strip()
+    ordering = request.GET.get("ordering", "newest").strip()
+    ordering_fields = {
+        "newest": ("-created_at", "-pk"),
+        "oldest": ("created_at", "pk"),
+    }
 
     if search:
         prospects = prospects.filter(
@@ -23,13 +29,19 @@ def prospect_list(request):
         )
     if status:
         prospects = prospects.filter(status=status)
+    if segment_id:
+        prospects = prospects.filter(segment_id=segment_id)
+    prospects = prospects.order_by(*ordering_fields.get(ordering, ordering_fields["newest"]))
 
     context = {
         "prospects": prospects,
         "message_templates": MessageTemplate.objects.filter(is_active=True),
         "import_form": ImportProspectsForm(),
         "status_choices": Prospect.Status.choices,
+        "segments": Segment.objects.all(),
+        "selected_segment": segment_id,
         "selected_status": status,
+        "selected_ordering": ordering if ordering in ordering_fields else "newest",
         "search": search,
         "total": Prospect.objects.count(),
         "new_count": Prospect.objects.filter(status=Prospect.Status.NEW).count(),
@@ -51,6 +63,7 @@ def import_prospects(request):
             "import_prospects",
             form.cleaned_data["query"],
             limit=form.cleaned_data["limit"],
+            segment=form.cleaned_data["segment"],
             stdout=output,
         )
     except Exception as error:

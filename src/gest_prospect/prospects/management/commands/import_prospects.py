@@ -4,7 +4,7 @@ import requests
 from django.core.management.base import BaseCommand, CommandError
 
 from gest_prospect.main import DEFAULT_QUERY, search_places
-from gest_prospect.prospects.models import Prospect
+from gest_prospect.prospects.models import Prospect, Segment
 
 
 class Command(BaseCommand):
@@ -19,6 +19,11 @@ class Command(BaseCommand):
             default=30,
             help="quantidade desejada de novos prospects (padrão: 30)",
         )
+        parser.add_argument(
+            "--segment",
+            required=True,
+            help="segmento em que os prospects encontrados serão cadastrados",
+        )
 
     def handle(self, *args, **options):
         api_key = os.getenv("GOOGLE_MAPS_API_KEY")
@@ -27,6 +32,10 @@ class Command(BaseCommand):
 
         query = options["query"]
         new_prospects_limit = options["limit"]
+        segment_name = " ".join(options["segment"].split())
+        if not segment_name:
+            raise CommandError("Informe um segmento.")
+        segment, _ = Segment.objects.get_or_create(name=segment_name)
         try:
             # A busca textual disponibiliza no máximo 60 candidatos. Consultamos
             # todos para conseguir avançar além dos já cadastrados.
@@ -52,6 +61,7 @@ class Command(BaseCommand):
                     "rating": place.get("rating"),
                     "user_rating_count": place.get("userRatingCount", 0),
                     "source_query": query,
+                    "segment": segment,
                 },
             )
             created_count += int(created)

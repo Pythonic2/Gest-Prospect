@@ -1,7 +1,12 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import MessageTemplate, Prospect
+from .models import MessageTemplate, Prospect, Segment
+
+
+@admin.register(Segment)
+class SegmentAdmin(admin.ModelAdmin):
+    search_fields = ("name",)
 
 
 @admin.register(MessageTemplate)
@@ -14,8 +19,8 @@ class MessageTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(Prospect)
 class ProspectAdmin(admin.ModelAdmin):
-    list_display = ("name", "phone", "website_link", "rating", "status", "whatsapp_link", "updated_at")
-    list_filter = ("status",)
+    list_display = ("name", "segment", "phone", "website_link", "rating", "status", "whatsapp_link", "updated_at")
+    list_filter = ("segment", "status")
     search_fields = ("name", "phone", "address")
     readonly_fields = ("created_at", "updated_at", "contacted_at", "whatsapp_link")
 

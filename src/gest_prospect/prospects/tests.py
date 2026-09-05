@@ -1,11 +1,13 @@
+from datetime import timedelta
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
-from .models import Prospect
+from .models import Prospect, Segment
 
 
 class ProspectModelTests(TestCase):
@@ -37,12 +39,13 @@ class ImportProspectsCommandTests(TestCase):
         }]
 
         with patch.dict("os.environ", {"GOOGLE_MAPS_API_KEY": "test-key"}):
-            call_command("import_prospects", limit=1)
+            call_command("import_prospects", limit=1, segment="Logística")
             search_places.return_value[0]["userRatingCount"] = 11
-            call_command("import_prospects", limit=1)
+            call_command("import_prospects", limit=1, segment="Logística")
 
         self.assertEqual(Prospect.objects.count(), 1)
         self.assertEqual(Prospect.objects.get().user_rating_count, 11)
+        self.assertEqual(Prospect.objects.get().segment.name, "Logística")
         search_places.assert_called_with("escritório de contabilidade João Pessoa", "test-key", 60)
 
     @patch("gest_prospect.prospects.management.commands.import_prospects.search_places")
@@ -54,10 +57,14 @@ class ImportProspectsCommandTests(TestCase):
         ]
 
         with patch.dict("os.environ", {"GOOGLE_MAPS_API_KEY": "test-key"}):
-            call_command("import_prospects", limit=1)
+            call_command("import_prospects", limit=1, segment="Clínicas médicas")
 
         self.assertEqual(Prospect.objects.count(), 2)
         self.assertTrue(Prospect.objects.filter(place_id="new-place").exists())
+
+    def test_import_requires_a_segment(self):
+        with self.assertRaises(SystemExit):
+            call_command("import_prospects", limit=1)
 
 
 class ProspectViewsTests(TestCase):
@@ -95,3 +102,25 @@ class ProspectViewsTests(TestCase):
         self.prospect.refresh_from_db()
         self.assertRedirects(response, reverse("prospects:list"))
         self.assertEqual(self.prospect.status, Prospect.Status.INTERESTED)
+
+    def test_list_filters_by_segment(self):
+        logistics = Segment.objects.create(name="Logística")
+        health = Segment.objects.create(name="Clínicas médicas")
+        self.prospect.segment = logistics
+        self.prospect.save()
+        Prospect.objects.create(place_id="place-health", name="Clínica", segment=health)
+
+        response = self.client.get(reverse("prospects:list"), {"segment": logistics.pk})
+
+        self.assertContains(response, "Empresa da Interface")
+        self.assertNotContains(response, "Clínica")
+
+    def test_list_orders_prospects_by_registration_date(self):
+        older = Prospect.objects.create(place_id="place-old", name="Empresa Antiga")
+        Prospect.objects.filter(pk=older.pk).update(created_at=timezone.now() - timedelta(days=1))
+
+        newest_response = self.client.get(reverse("prospects:list"))
+        oldest_response = self.client.get(reverse("prospects:list"), {"ordering": "oldest"})
+
+        self.assertEqual(newest_response.context["prospects"][0], self.prospect)
+        self.assertEqual(oldest_response.context["prospects"][0], older)

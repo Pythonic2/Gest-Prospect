@@ -16,14 +16,14 @@
         .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
         .stat strong { display: block; font-size: 26px; }
         .stat span { color: var(--muted); }
-        .form-grid { display: grid; grid-template-columns: minmax(240px, 1fr) 160px auto; gap: 12px; align-items: end; }
+        .form-grid { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(180px, .65fr) 140px auto; gap: 12px; align-items: end; }
         label { display: block; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
         input, select, button { min-height: 40px; border-radius: 8px; border: 1px solid #d0d5dd; padding: 8px 11px; font: inherit; }
         input, select { width: 100%; background: white; }
         button { cursor: pointer; font-weight: 650; background: white; }
         .primary { color: white; background: var(--blue); border-color: var(--blue); }
         .whatsapp { color: white; background: #128c4a; border-color: #128c4a; white-space: nowrap; }
-        .filters { display: grid; grid-template-columns: 1fr 210px auto; gap: 10px; margin-bottom: 16px; }
+        .filters { display: grid; grid-template-columns: 1fr 180px 180px 190px auto; gap: 10px; margin-bottom: 16px; }
         .template-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
         .template { border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
         .template header { display: flex; justify-content: space-between; gap: 12px; }
@@ -73,6 +73,17 @@
         <form method="post" action="{% url 'prospects:import' %}" class="form-grid">
             {% csrf_token %}
             <div><label for="{{ import_form.query.id_for_label }}">Termo de busca</label>{{ import_form.query }}</div>
+            <div>
+                <label for="{{ import_form.segment.id_for_label }}">Segmento para cadastrar</label>
+                {{ import_form.segment }}
+                <datalist id="segment-suggestions">
+                    <option value="Logística">
+                    <option value="Marítima">
+                    <option value="Aérea">
+                    <option value="Clínicas médicas">
+                    <option value="Contabilidade">
+                </datalist>
+            </div>
             <div><label for="{{ import_form.limit.id_for_label }}">Novos prospects</label>{{ import_form.limit }}</div>
             <button type="submit" class="primary">Buscar e cadastrar</button>
         </form>
@@ -104,16 +115,28 @@
                     <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
+            <select name="segment">
+                <option value="">Todos os segmentos</option>
+                {% for segment in segments %}
+                    <option value="{{ segment.pk }}"{% if selected_segment == segment.pk|stringformat:"s" %} selected{% endif %}>{{ segment.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="ordering" aria-label="Ordenação por data de cadastro">
+                <option value="newest"{% if selected_ordering == "newest" %} selected{% endif %}>Cadastrados mais recentes</option>
+                <option value="oldest"{% if selected_ordering == "oldest" %} selected{% endif %}>Cadastrados mais antigos</option>
+            </select>
             <button type="submit">Filtrar</button>
         </form>
 
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Empresa</th><th>Telefone</th><th>Site</th><th>Avaliação</th><th>Status</th><th>Contato</th></tr></thead>
+                <thead><tr><th>Empresa</th><th>Segmento</th><th>Cadastrado em</th><th>Telefone</th><th>Site</th><th>Avaliação</th><th>Status</th><th>Contato</th></tr></thead>
                 <tbody>
                 {% for prospect in prospects %}
                     <tr>
                         <td><strong>{{ prospect.name }}</strong><small>{{ prospect.address|default:"Sem endereço" }}</small></td>
+                        <td>{{ prospect.segment.name|default:"Não segmentado" }}<small>{{ prospect.source_query|default:"Sem termo" }}</small></td>
+                        <td>{{ prospect.created_at|date:"d/m/Y H:i" }}</td>
                         <td>{{ prospect.phone|default:"Sem telefone" }}</td>
                         <td>
                             {% if prospect.website_url %}
@@ -150,7 +173,7 @@
                         </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="6" class="empty">Nenhum prospect encontrado.</td></tr>
+                    <tr><td colspan="8" class="empty">Nenhum prospect encontrado.</td></tr>
                 {% endfor %}
                 </tbody>
             </table>

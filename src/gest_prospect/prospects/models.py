@@ -46,6 +46,19 @@ class MessageTemplate(models.Model):
         return self.body.format(nome_empresa=company_name)
 
 
+class Segment(models.Model):
+    name = models.CharField("segmento", max_length=120, unique=True)
+    created_at = models.DateTimeField("criado em", auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "segmento"
+        verbose_name_plural = "segmentos"
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Prospect(models.Model):
     class Status(models.TextChoices):
         NEW = "new", "Novo"
@@ -62,6 +75,14 @@ class Prospect(models.Model):
     rating = models.DecimalField("avaliação", max_digits=2, decimal_places=1, null=True, blank=True)
     user_rating_count = models.PositiveIntegerField("quantidade de avaliações", default=0)
     source_query = models.CharField("termo pesquisado", max_length=500, blank=True)
+    segment = models.ForeignKey(
+        Segment,
+        verbose_name="segmento",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="prospects",
+    )
     status = models.CharField("status", max_length=20, choices=Status.choices, default=Status.NEW)
     contacted_at = models.DateTimeField("contatado em", null=True, blank=True)
     created_at = models.DateTimeField("cadastrado em", auto_now_add=True)

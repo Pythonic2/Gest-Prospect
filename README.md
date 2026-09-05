@@ -17,17 +17,20 @@ Ative a **Places API (New)** no Google Cloud, crie uma chave de API e execute:
 ```bash
 cp .env.example .env
 # Preencha GOOGLE_MAPS_API_KEY no arquivo .env
-uv run python manage.py import_prospects --limit 30
+uv run python manage.py import_prospects --segment "Contabilidade" --limit 30
 ```
 
 A busca padrão é `escritorio de contabilidade em joao pessoa`. Para usar outro
 termo, passe-o como argumento:
 
 ```bash
-uv run python manage.py import_prospects "clinicas odontologicas em joao pessoa" --limit 40
+uv run python manage.py import_prospects "freight forwarding São Paulo" --segment "Logística" --limit 30
 ```
 
-O `--limit` define quantos prospects **novos** devem ser cadastrados. O comando
+O `--segment` define o segmento em que os prospects encontrados serão cadastrados
+(por exemplo, Logística, Marítima, Aérea, Clínicas médicas ou Contabilidade).
+Também é possível digitar um novo segmento diretamente na tela de busca. O
+`--limit` define quantos prospects **novos** devem ser cadastrados. O comando
 consulta até 60 candidatos, pula os que já existem e continua até atingir esse
 limite. Cada página contém no máximo 20 resultados e representa uma requisição
 separada à API.
@@ -44,7 +47,7 @@ uv run python manage.py runserver
 ```
 
 Acesse `http://127.0.0.1:8000/` para usar a interface de prospecção. Nela é
-possível importar, pesquisar, filtrar, alterar o status e abrir a mensagem no
+possível importar, pesquisar, filtrar por segmento, alterar o status e abrir a mensagem no
 WhatsApp. Ao abrir o WhatsApp, o prospect é marcado como contatado e a data fica
 registrada para evitar contatos repetidos.
 
